@@ -2,21 +2,43 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\Mail;
 use App\Models\Patient;
 use Illuminate\Http\Request;
+use App\Mail\PatientRegistered;
 
 class PatientController extends Controller
 {
     public function store(Request $request)
     {
+        // Valido los datos
         $validatedData = $request->validate([
             'name' => 'required|max:255',
-            'email' => 'required|email|unique:patients',
+            'email' => 'required|email|unique:patients,email',
             'phone_number' => 'required',
-            'document_photo' => 'required',
-            ]);
+            'document_photo' => 'required'
+        ]);
     
-        $patient = Patient::create($validatedData);
-        return response()->json($patient, 201);
+        // Guardo la imagen en el storage, y obtengo el path de forma de no guardar un base64 en la base de datos
+        $documentPath = $request->file('document_photo')->store('public/documents');
+    
+        // Creo el paciente
+        $patient = Patient::create([
+            'name' => $validatedData['name'],
+            'email' => $validatedData['email'],
+            'phone_number' => $validatedData['phone_number'],
+            'document_photo' => $documentPath
+        ]);
+
+        // Envío el mail
+        $mail = Mail::to($patient->email)->queue(new PatientRegistered($patient));
+
+        //chequeo en caso de que no se pueda conectar con la herramienta de mailing (en mi caso mailtrap) pero el paciente se haya creado igual
+        if ($mail) {
+            return response()->json(['message' => 'Patient created successfully'], 201);
+        } else {
+            return response()->json(['message' => 'Patient created successfully, but the email could not be sent'], 201);
+        }
     }
+    
 }
