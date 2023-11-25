@@ -18,3 +18,8 @@ Route::get('/', function () {
 });
 
 
+Route::get('/{path?}', function() {
+    return view('react');
+})->where('path', '.*');
+
+
