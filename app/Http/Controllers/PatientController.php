@@ -33,12 +33,10 @@ class PatientController extends Controller
         // Envío el mail
         $mail = Mail::to($patient->email)->queue(new PatientRegistered($patient));
 
-        //chequeo en caso de que no se pueda conectar con la herramienta de mailing (en mi caso mailtrap) pero el paciente se haya creado igual
-        if ($mail) {
-            return response()->json(['message' => 'Patient created successfully'], 201);
-        } else {
-            return response()->json(['message' => 'Patient created successfully, but the email could not be sent'], 201);
-        }
+        return response()->json([
+            'message' => 'Patient created successfully',
+            'patient' => $patient
+        ], 201);
     }
     
 }
