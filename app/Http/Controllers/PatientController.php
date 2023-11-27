@@ -37,6 +37,7 @@ class PatientController extends Controller
                 'message' => 'Patient created successfully',
                 'patient' => $patient
             ], 201);
+            
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Patient registration failed!',

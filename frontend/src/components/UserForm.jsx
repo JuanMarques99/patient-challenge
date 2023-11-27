@@ -54,23 +54,24 @@ function UserForm({ onClose, onAddPatientSuccess }) {
 
 
     const onSubmit = async (formData) => {
-         const patient = await PatientService.createPatient(formData);
-       if (patient !== undefined) {
-           onAddPatientSuccess(patient);
-           setMessageInfo({
-               isVisible: true,
-               message: 'Patient created successfully.',
-               type: 'success',
-           });
-       }else{
-              setMessageInfo({
-                isVisible: true,
-                message: 'There was an error creating the patient.',
-                type: 'error',
-              });
-         }
-    }
+        const data = await PatientService.createPatient(formData);
+        if(data.error === undefined){
+        setMessageInfo({
+            isVisible: true,
+            message: 'Patient created succesfuly',
+            type: '',
+        });
+            onAddPatientSuccess(data);
+            onClose();
 
+    }else{
+        setMessageInfo({
+            isVisible: true,
+            message: data.error,
+            type: 'error',
+        });
+    }
+    }
 
     return (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" id="user-form-bckg">

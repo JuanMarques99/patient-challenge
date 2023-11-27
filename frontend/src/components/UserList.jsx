@@ -25,12 +25,11 @@ function UserList() {
         setPage(0);
     };
 
-    const handleAddPatientSuccess = (newPatient) => {
-        const updatedPatients = [...patients, newPatient];
+    const handleAddPatientSuccess = async (newPatient) => {
+        const updatedPatients = patients.concat(newPatient);
         setPatients(updatedPatients);
         localStorage.setItem('patients', JSON.stringify(updatedPatients));
-        setIsFormVisible(false);
-    };
+        };
 
     const handleAddPatient = () => {
         setIsFormVisible(true);
@@ -40,20 +39,14 @@ function UserList() {
         setIsFormVisible(false);
     };
 
-    const fetchPatients = () => {
-        if (localPatients) {
-            setPatients(JSON.parse(localPatients));
-        }else{
-            PatientService.getAllPatients();
-        }
+    const fetchPatients = async () => {
+        let refreshPatients = await PatientService.getAllPatients();
+        setPatients(refreshPatients);
+        localStorage.setItem('patients', JSON.stringify(refreshPatients));
     };
 
     useEffect(() => {
-        if (localPatients) {
-            setPatients(JSON.parse(localPatients));
-        } else {
-            fetchPatients();
-        }
+        fetchPatients();
     }, []);
 
     return (
@@ -79,22 +72,33 @@ function UserList() {
                                 </TableRow>
                             </TableHead>
                             <TableBody>
-                                {patients.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((patient) => (
-                                    <CollapsibleRow key={patient.id} patient={patient} onReload={fetchPatients} />
-                                ))}
+                                {patients.length > 0 ? (
+                                    patients.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((patient) => (
+                                        <CollapsibleRow key={patient.id} patient={patient} onReload={fetchPatients} />
+                                    ))
+                                ) : (
+                                    <TableRow>
+                                        <TableCell colSpan={4} align="center">
+                                            There are no patients registered
+                                        </TableCell>
+                                    </TableRow>
+                                )}
                             </TableBody>
                         </Table>
                     </TableContainer>
-                    <TablePagination
-                        rowsPerPageOptions={[10, 25, 100]}
-                        component="div"
-                        count={patients.length}
-                        rowsPerPage={rowsPerPage}
-                        page={page}
-                        onPageChange={handleChangePage}
-                        onRowsPerPageChange={handleChangeRowsPerPage}
-                    />
+                    {patients ? (
+                        <TablePagination
+                            rowsPerPageOptions={[10, 25, 100]}
+                            component="div"
+                            count={patients.length || 0}
+                            rowsPerPage={rowsPerPage}
+                            page={page}
+                            onPageChange={handleChangePage}
+                            onRowsPerPageChange={handleChangeRowsPerPage}
+                        />
+                    ) : null}
                 </Paper>
+
                 {isFormVisible && <UserForm onClose={handleCloseForm} onAddPatientSuccess={handleAddPatientSuccess} />}
             </div>
         </div>
