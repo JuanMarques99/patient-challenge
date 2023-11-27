@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import ModalMessage from './ModalMessage';
+import PatientService from '../services/patient';
 
 
 function UserForm({ onClose, onAddPatientSuccess }) {
@@ -29,16 +30,16 @@ function UserForm({ onClose, onAddPatientSuccess }) {
     const validateForm = () => {
         let newErrors = {};
         if (!formData.name.match(/^[a-zA-Z\s]*$/)) {
-            newErrors.name = "El nombre solo debe contener letras.";
+            newErrors.name = "Name must only contain letters.";
         }
         if (!formData.email.endsWith("@gmail.com")) {
-            newErrors.email = "El correo electrónico debe ser una dirección de @gmail.com.";
+            newErrors.email = "Email must end with @gmail.com.";
         }
         if (formData.countryCode === '+' || !formData.phoneNumber.match(/^\d+$/)) {
-            newErrors.phoneNumber = "Por favor, ingresa un código de país y un número de teléfono válido.";
+            newErrors.phoneNumber = "Please, enter a valid country code and phone number.";
         }
         if (!formData.documentPhoto) {
-            newErrors.documentPhoto = "Por favor, sube una foto del documento (.jpg).";
+            newErrors.documentPhoto = "Please upload a photo (.jpg).";
         }
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -52,30 +53,24 @@ function UserForm({ onClose, onAddPatientSuccess }) {
     }
 
 
-    const onSubmit = (formData) => {
-        const formDataWithPhoto = new FormData();
-        formDataWithPhoto.append('name', formData.name);
-        formDataWithPhoto.append('email', formData.email);
-        formDataWithPhoto.append('phone_number', formData.countryCode + '' + formData.phoneNumber);
-        formDataWithPhoto.append('document_photo', formData.documentPhoto);
+    const onSubmit = async (formData) => {
+         const patient = await PatientService.createPatient(formData);
+       if (patient !== undefined) {
+           onAddPatientSuccess(patient);
+           setMessageInfo({
+               isVisible: true,
+               message: 'Patient created successfully.',
+               type: 'success',
+           });
+       }else{
+              setMessageInfo({
+                isVisible: true,
+                message: 'There was an error creating the patient.',
+                type: 'error',
+              });
+         }
+    }
 
-        fetch('http://localhost/api/patients', {
-            method: 'POST',
-            body: formDataWithPhoto,
-        })
-            .then(response => response.json())
-            .then(data => {
-                if (data.patient !== undefined) {  
-                    onAddPatientSuccess(data.patient);
-                    setMessageInfo({ message: 'Paciente creado exitosamente.', type: 'success', isVisible: true });
-                } else {
-                    setMessageInfo({ message: data.error, type: 'error', isVisible: true });
-                }
-            })
-            .catch((error) => {
-                setMessageInfo({ message: `Error: ${error}`, type: 'error', isVisible: true });
-            });
-    };
 
     return (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" id="user-form-bckg">
@@ -87,13 +82,13 @@ function UserForm({ onClose, onAddPatientSuccess }) {
                         </button>
                     </div>
                     <div className="text-center">
-                        <h3 className="text-2xl leading-6 font-bold text-gray-900 mb-4">Agregar Paciente</h3>
+                        <h3 className="text-2xl leading-6 font-bold text-gray-900 mb-4">Add Patient</h3>
                         <form className="p-4 text-black grid" onSubmit={handleSubmit}>
                             <input
                                 type="text"
                                 name="name"
                                 className="border bg-slate-100 p-2 rounded m-1	"
-                                placeholder="Nombre"
+                                placeholder="Name"
                                 value={formData.name}
                                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                             />
@@ -102,7 +97,7 @@ function UserForm({ onClose, onAddPatientSuccess }) {
                                 type="email"
                                 name="email"
                                 className="border bg-slate-100 p-2 rounded m-1	"
-                                placeholder="Correo electrónico"
+                                placeholder="Email"
                                 value={formData.email}
                                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                             />
@@ -112,7 +107,7 @@ function UserForm({ onClose, onAddPatientSuccess }) {
                                     type="text"
                                     name="countryCode"
                                     className="border p-2 bg-slate-100 rounded w-3/12 m-1	"
-                                    placeholder="Código de país"
+                                    placeholder="Country code"
                                     value={formData.countryCode}
                                     onChange={(e) => setFormData({ ...formData, countryCode: e.target.value })}
                                 />
@@ -121,7 +116,7 @@ function UserForm({ onClose, onAddPatientSuccess }) {
                                     type="tel"
                                     name="phoneNumber"
                                     className="border p-2 bg-slate-100 rounded w-9/12 m-1	"
-                                    placeholder="Número de teléfono"
+                                    placeholder="Phone Number"
                                     value={formData.phoneNumber}
                                     onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
                                 />
@@ -129,10 +124,10 @@ function UserForm({ onClose, onAddPatientSuccess }) {
                             {errors.phoneNumber && <p className="text-red-500">{errors.phoneNumber}</p>}
                             <div {...getRootProps({ className: 'dropzone border m-1	p-2 rounded' })}>
                                 <input {...getInputProps()} />
-                                <p>Arrastra y suelta la foto del documento aquí, o haz clic para seleccionar el archivo</p>
+                                <p>Drag and drop or upload a file here</p>
                                 {formData.documentPhoto && (
                                     <div>
-                                        <img src={formData.documentPhotoPreview} alt="Vista previa del documento" className="mt-2 w-24 h-24 object-cover" />
+                                        <img src={formData.documentPhotoPreview} alt="Document photo" className="mt-2 w-24 h-24 object-cover" />
                                         <p className="text-sm text-gray-600">{formData.documentPhoto.name}</p>
                                     </div>
                                 )}
@@ -140,7 +135,7 @@ function UserForm({ onClose, onAddPatientSuccess }) {
                             </div>
                             <div className="mt-5">
                                 <button type="submit" className="inline-flex justify-center w-full px-4 py-2 text-white bg-blue-500 hover:bg-blue-700 rounded-md focus:outline-none">
-                                    Crear Paciente
+                                    Create Patient
                                 </button>
                             </div>
                         </form>

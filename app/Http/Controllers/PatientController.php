@@ -6,47 +6,45 @@ use Illuminate\Support\Facades\Mail;
 use App\Models\Patient;
 use Illuminate\Http\Request;
 use App\Mail\PatientRegistered;
+use App\Jobs\SendPatientRegisteredEmail;
 
 class PatientController extends Controller
 {
+
     public function store(Request $request)
     {
-        try{
-        // Valido los datos
-        $validatedData = $request->validate([
-            'name' => 'required|max:255',
-            'email' => 'required|email|unique:patients,email',
-            'phone_number' => 'required',
-            'document_photo' => 'required'
-        ]);
-    
-        
-        // Guardo la imagen en el storage, y obtengo el path de forma de no guardar un base64 en la base de datos
-        $documentPath = $request->file('document_photo')->store('storage/documents');
-    
-        // Creo el paciente
-        $patient = Patient::create([
-            'name' => $validatedData['name'],
-            'email' => $validatedData['email'],
-            'phone_number' => $validatedData['phone_number'],
-            'document_photo' => $documentPath
-        ]);
+        try {
+            $validatedData = $request->validate([
+                'name' => 'required|max:255',
+                'email' => 'required|email|unique:patients,email',
+                'phone_number' => 'required',
+                'document_photo' => 'required'
+            ]);
 
-        // Envío el mail
-         Mail::to($patient->email)->queue(new PatientRegistered($patient));
 
-    
-        return response()->json([
-            'message' => 'Patient created successfully',
-            'patient' => $patient
-        ], 201);
+            $documentPath = $request->file('document_photo')->store('public/documents');
+
+            $patient = Patient::create([
+                'name' => $validatedData['name'],
+                'email' => $validatedData['email'],
+                'phone_number' => $validatedData['phone_number'],
+                'document_photo' => $documentPath
+            ]);
+
+            SendPatientRegisteredEmail::dispatch($patient);
+
+            return response()->json([
+                'message' => 'Patient created successfully',
+                'patient' => $patient
+            ], 201);
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Patient not created',
+                'message' => 'Patient registration failed!',
                 'error' => $e->getMessage()
-            ], 400);
+            ], 409);
         }
     }
+
 
     public function index()
     {
@@ -63,6 +61,4 @@ class PatientController extends Controller
             'patient' => $patient
         ], 200);
     }
-
-    
 }
