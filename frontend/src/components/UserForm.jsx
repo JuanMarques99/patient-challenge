@@ -67,9 +67,7 @@ function UserForm({ onClose, onAddPatientSuccess }) {
             .then(data => {
                 if (data.patient !== undefined) {  
                     onAddPatientSuccess(data.patient);
-                    alert('Paciente creado exitosamente.');
                     setMessageInfo({ message: 'Paciente creado exitosamente.', type: 'success', isVisible: true });
-                    alert('Paciente creado exitosamente3.');
                 } else {
                     setMessageInfo({ message: data.error, type: 'error', isVisible: true });
                 }

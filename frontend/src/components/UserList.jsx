@@ -33,6 +33,7 @@ function CollapsibleRow({ patient, onReload }) {
                                         <TableCell>Nombre: {patient.name}</TableCell>
                                         <TableCell>Email: {patient.email}</TableCell>
                                         <TableCell>Teléfono: {patient.phone_number}</TableCell>
+                                        {/* Agregue la ruta en donde se corre mi proyecto. Use storage para almacenar estas fotos en storage/documents*/}
                                         <TableCell>Documento: <img src={'http://localhost:8000/' + patient.document_photo} alt={`Documento de ${patient.name}`} style={{ maxWidth: '100%', height: 'auto' }} /></TableCell>
                                     </TableRow>
                                 </TableBody>
