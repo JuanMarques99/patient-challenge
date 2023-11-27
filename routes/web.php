@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
 
 /*
 |--------------------------------------------------------------------------
@@ -18,8 +19,7 @@ Route::get('/', function () {
 });
 
 
-Route::get('/{path?}', function() {
-    return view('react');
-})->where('path', '.*');
-
-
+Route::get('/documents', function () {
+    $files = Storage::files('public/documents');
+    return print_r($files);
+});

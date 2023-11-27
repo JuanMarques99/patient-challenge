@@ -11,6 +11,7 @@ class PatientController extends Controller
 {
     public function store(Request $request)
     {
+        try{
         // Valido los datos
         $validatedData = $request->validate([
             'name' => 'required|max:255',
@@ -19,8 +20,9 @@ class PatientController extends Controller
             'document_photo' => 'required'
         ]);
     
+        
         // Guardo la imagen en el storage, y obtengo el path de forma de no guardar un base64 en la base de datos
-        $documentPath = $request->file('document_photo')->store('public/documents');
+        $documentPath = $request->file('document_photo')->store('storage/documents');
     
         // Creo el paciente
         $patient = Patient::create([
@@ -31,12 +33,36 @@ class PatientController extends Controller
         ]);
 
         // Envío el mail
-        $mail = Mail::to($patient->email)->queue(new PatientRegistered($patient));
+         Mail::to($patient->email)->queue(new PatientRegistered($patient));
 
+    
         return response()->json([
             'message' => 'Patient created successfully',
             'patient' => $patient
         ], 201);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Patient not created',
+                'error' => $e->getMessage()
+            ], 400);
+        }
     }
+
+    public function index()
+    {
+        $patients = Patient::all();
+
+        return response()->json([
+            'patients' => $patients
+        ], 200);
+    }
+
+    public function show(Patient $patient)
+    {
+        return response()->json([
+            'patient' => $patient
+        ], 200);
+    }
+
     
 }
